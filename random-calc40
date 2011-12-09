@@ -1,0 +1,99 @@
+#!/usr/bin/env lua
+
+-- random-calc40 N generates a random calc40 input of length N
+
+local deltas = { }
+deltas[-1] = "+-*/&|p"
+deltas[0] = "~cs"
+deltas[1] = "d0"
+
+local target_size = 10
+
+-- expect growth rate in stack size steers toward target
+-- if stack changes, probability of growth is 1/2 * exp(-kx),
+-- where x is the number of entries in excess of the target size
+
+local function pgrows(x)
+  local k = 0.25
+  k = 0.15 -- more probability of underflow
+  local p = math.exp(- k * x) / 2
+  return math.random() < p 
+end
+
+local pstatic = 0.2 -- probability of size not changed
+local pspace  = 0.3
+
+local function gen(size)
+  local function randchar(s)
+    local i = math.random(s:len())
+    return s:sub(i, i)
+  end
+
+  local function finish(delta)
+    local c = randchar(deltas[delta])
+    if c == '0' then
+      return math.random(-1000, 1000), delta
+    else
+      return c, delta
+    end
+  end
+
+  if math.random() < pspace then
+    return ' ', 0
+  elseif math.random() < pstatic then
+    return finish(0)
+  elseif size >= target_size then
+    return finish(pgrows(size - target_size) and 1 or -1)
+  else
+    return finish(pgrows(target_size - size) and -1 or 1)
+  end
+end
+    
+local seed
+if arg[1] == '-s' then
+  seed = assert(tonumber(arg[2]))
+  table.remove(arg, 1)
+  table.remove(arg, 1)
+else
+  seed = os.time()
+end
+
+math.randomseed(seed)
+
+local N = tonumber(arg[1]) or 100
+local stacksize, lastnum = 0, false
+for i = 1, N do
+  local op, delta
+  repeat
+    op, delta = gen(stacksize)
+    if lastnum and type(op) == 'number' then
+      io.write(' ')
+    end
+    lastnum = false
+    if type(op) == 'number' then
+      if op < 0 then
+        io.write(-op, 'c')
+      else
+        io.write(op)
+        lastnum = true
+      end
+    else
+      io.write(op)
+    end
+    stacksize = stacksize + delta
+  until op ~= ' '
+end
+io.write '\n'
+  
+
+
+
+local function expectation(x)
+  local sum = 0
+  for i = 1, 1000 do
+    sum = sum + (pgrows(x) and 1 or -1)
+  end
+  return sum / 1000
+end
+
+

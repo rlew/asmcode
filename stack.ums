@@ -1,0 +1,9 @@
+// Allocating space for the call stack, code directly from Prof Ramsey's notes
+
+.zero r0
+.section stk
+.space 100000
+endstack:
+.section init
+r2 := endstack
+

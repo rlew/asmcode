@@ -1,0 +1,38 @@
+Rachel Lew
+Mark Timmerman
+
+DATA STRUCTURES
+    - Call Stack: as specified in the assignment:
+        - r2: stack pointer
+        - r1: calling address or return value
+        - r3 / r4: non-volatile registers that are preserved across function
+          calls
+        - r5: volatile register
+        - r6, r7: volatile temporary registers
+        - r0: always zero
+
+        The call stack will be a space allocated in memory segment 0 as a
+        series of zeroed words. The calling conventions will be those specifed
+        in the assignment using the above register conventions.
+
+    - Value Stack: we will represent the value stack in the same way that we
+      will represent the call stack with a different nonvolatile register (r3)
+      representing the stack pointer. The value stack will be series of
+      zereoed words that will store the calculator input.
+
+      Invariants:
+        - Elements in the value stack with smaller addresses will represent
+          newly pushed elements. The larger the address, the older the value.
+
+        - The size of the value stack will be 10,000 elements. Attempting to
+          push on more values will be a unchecked runtime error.
+
+        - The initial state of the stack will be waiting
+
+        - Once an operation has been completed, the state of the stack is
+          waiting.
+
+        - The stack is in the entering state after a digit is seen until a
+          space or command is seen.
+
+

@@ -1,0 +1,41 @@
+// Printing a positive number using a recursive function
+ .zero r0
+ .temp r6, r7
+ .section text
+
+// 
+print:
+    pop r5 off stack r2     // load parameter
+    // Preserving calling function's nonvolatile registers on stack
+    push r1 on stack r2     // save return address
+    push r3 on stack r2     // save nonvolatile registers
+    push r4 on stack r2 
+
+    r3 := r5        // put parameter into nonvolatile register
+    r4 := r3 / 10   // checking for single digit with integer division
+    
+    // only pushes non zero values onto the stack (storing upper digits)
+    if (r4 == 0) goto skip_storing_0
+    push r4 on stack r2     
+
+    skip_storing_0:
+    r5 := base      // label for printing single digit
+    r1 := recursed_print    // label for calculating next digit to print
+    
+    // Either recurses on print function or outputs single digit
+    if (r4 != 0) r5 := print
+    goto r5
+     
+    recursed_print:
+        r4 := r4 * 10
+        r3 := r3 - r4
+    
+    base:
+        output r3 + 48
+
+    // Restoring the nonvolatile registers and returning to calling function
+    pop r4 off stack r2
+    pop r3 off stack r2
+    pop r5 off stack r2
+    goto r5
+halt

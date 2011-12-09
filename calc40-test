@@ -1,0 +1,37 @@
+#!/bin/ksh
+
+prog=$(basename $0)
+
+function die {
+  echo "$*" >&2 ; exit 1
+}
+
+function usage {
+  die "Usage: $prog umfile [N]"
+}  
+
+case $# in
+  0) usage ;;
+  1) n=    ;;
+  2) n="$2" ;;
+  *) usage ;;
+esac
+
+input=$(mktemp)
+cout=$(mktemp)
+umout=$(mktemp)
+
+trap 'rm -f $input $cout $umout' 0 1 2 15	# clean up files
+
+random-calc40 $n > $input || die "Random generator failed"
+calc40 < $input > $cout   || die "calc40 binary failed"
+catch-signal cpu-limited 5 um "$1" < $input > $umout || die "um execution failed"
+if cmp -s $cout $umout; then
+  echo "Results identical -- test passed"
+  exit 0
+else
+  echo "FAILED on input $(cat $input)"
+  diff -u $cout $umout
+  exit 1
+fi
+

@@ -1,0 +1,323 @@
+.section data
+.zero r0
+.temps r6, r7
+
+jumptable:
+    .space 256
+    
+.section init
+r5 := 0
+
+// initializing every element of the character jumptable to input error
+jumptable_set_inputerr:
+    m[r0][jumptable + r5] := input.err
+    r5 := r5 + 1
+    if (r5 < 256) goto jumptable_set_inputerr
+
+// initializing the digits in the jumptable
+r5 := '0'
+jumptable_set_digits:
+    m[r0][jumptable + r5] := digit
+    r5 := r5 + 1
+    if (r5 <= '9') goto jumptable_set_digits
+
+// initializing all the commands in the jumptable 
+.section init
+m[r0][jumptable + ' '] := space
+.section text
+space:
+    r4 := 0         // calculator enters the waiting stage
+    goto calculator
+    
+.section init
+m[r0][jumptable + '\n'] := newline
+.section text
+newline:
+    r4 := r3        // making a copy of the value stack pointer
+    newline_loop:
+        if (r4 == value_stack) goto newline_end     // reached bottom of stack
+        push *r4 on stack r2        // value to be printed
+        goto print linking r1
+        r4 := r4 + 1                // moving up in value stack
+    newline_end:
+        r4 := 0             // return to waiting state
+        goto calculator
+
+.section init
+m[r0][jumptable + '+'] := add
+.section text
+add:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for add fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 + r4               // calculate x + y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+.section init
+m[r0][jumptable + '-'] := subtract
+.section text
+subtract:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for subtract fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 - r4               // calculate x - y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+.section init
+m[r0][jumptable + '*'] := multiply
+.section text
+multiply:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for multiply fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 * r4               // calculate x * y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+.section init
+m[r0][jumptable + '/'] := divide
+.section text
+division_by_zero:
+    push r4 on stack r3             // return 0 to value stack
+    output "Division by zero\n"     
+    pop r4 off stack r2             // restore nonvolatile registers
+    goto calculator
+
+divide:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for divide fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    if (r4 == 0) goto division_by_zero
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 / r4               // calculate x / y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+
+.section init
+m[r0][jumptable + '|'] := or
+.section text
+or:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for or fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 | r4               // calculate x | y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator  
+
+.section init
+m[r0][jumptable + '&'] := and
+.section text
+and:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for and fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    r4 := r5 & r4               // calculate x & y
+    push r4 on stack r3         // push new value
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+.section init
+m[r0][jumptable + 'c'] := negate
+.section text
+negate:
+    r5 := 1                     // number of elements required for negate fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r5 off stack r3         // pop x
+
+    r5 := -r5                   // calculate -x
+    push r5 on stack r3         // push new value
+
+    goto calculator
+
+
+.section init
+m[r0][jumptable + '~'] := complement
+.section text
+complement:
+    r5 := 1                     // number of elements required for complement fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r5 off stack r3         // pop x
+
+    r5 := ~r5                   // calculate ~x
+    push r5 on stack r3         // push new value
+
+    goto calculator
+
+.section init
+m[r0][jumptable + 's'] := swap
+.section text
+swap:
+    push r4 on stack r2         
+
+    r5 := 2                     // number of elements required for and fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    r5 := r3 + 1
+    if (r5 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r4 off stack r3         // pop y
+    pop r5 off stack r3         // pop x
+
+    push r4 on stack r3         // reversing order of x and y on value stack
+    push r5 on stack r3
+
+    pop r4 off stack r2         // restore nonvolatile values
+    goto calculator
+
+.section init
+m[r0][jumptable + 'd'] := duplicate
+.section text
+duplicate:
+    r5 := 1                     // number of elements required for complement fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r5 off stack r3         // pop x
+    
+    push r5 on stack r3         // duplicating value on stack
+    push r5 on stack r3         
+
+    goto calculator
+
+.section init
+m[r0][jumptable + 'p'] := pop
+.section text
+pop:
+    r5 := 1                     // number of elements required for complement fn
+    push r5 on stack r2         // passing to stack_underflow
+    if (r3 == value_stack) goto stack_underflow
+    pop r5 off stack r2         // removing from call stack if sufficient args
+    
+    pop r5 off stack r3         // pop x 
+
+    goto calculator
+
+.section init
+m[r0][jumptable + 'z'] := clear
+.section text
+clear:
+    if (r3 == value_stack) goto calculator
+    pop r5 off stack r3
+    goto clear
+
+.section text
+digit:
+    if (r4 == 0) goto digit_waiting
+    pop r1 off stack r3     // getting digit to "enter"
+    r1 := r1 * 10           // adjusting to add new input
+    r5 := m[r0][r2 + 1]
+    r1 := r1 + r5
+    push r1 on stack r2     // value to be added to value stack
+
+digit_waiting:
+    pop r5 off stack r2     // parameter
+    push r5 on stack r3     // Adding to call stack
+    pop r5 off stack r2     // retrieve return address
+    r4 := 1
+    goto calculator
+
+.section text
+stack_underflow:
+    pop r5 off stack r2     // retrieving number of arguments
+    output "Stack underflow---expected at least "
+    output r5 + 48
+    output " elements\n"
+    goto calculator
+
+.section text
+main:
+    .section valstk
+        .space 10000
+        value_stack:
+    .section init
+        r3 := value_stack
+    
+    .section text
+    // 0 is waiting and 1 is entering
+    r4 := 0                 // Initial state is waiting
+
+calculator:
+    input r5
+    r5 := ~r5
+    if (r5 == 0) goto r1
+    r5 := ~r5
+    
+    push r5 on stack r2
+    r5 := jumptable + r5
+    r5 := m[r0][r5]
+    goto r5
