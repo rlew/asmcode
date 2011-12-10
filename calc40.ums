@@ -6,20 +6,25 @@ jumptable:
     .space 256
     
 .section init
-r5 := 0
+r5 := jumptable
+r4 := jumptable + 256
 
-// initializing every element of the character jumptable to input error
+// m[r0][x] == input_err for all x s.t. r5 <= x < r4
+// continue to jumptable_setup_digits
 jumptable_set_inputerr:
-    m[r0][jumptable + r5] := input.err
+    m[r0][r5] := input_err
     r5 := r5 + 1
-    if (r5 < 256) goto jumptable_set_inputerr
+    if (r5 == r4) goto jumptable_setup_digits using r3
+    goto jumptable_set_inputerr 
 
-// initializing the digits in the jumptable
-r5 := '0'
-jumptable_set_digits:
-    m[r0][jumptable + r5] := digit
+// m[r0][x] == digit for all x s.t. '0' <= x <= '9'
+jumptable_setup_digits:
+    r5 := jumptable + '0'
+// similar but jumptable+x where r5 <= x <= jumptable +'9'
+jumptable_set_digits:     
+    m[r0][r5] := digit
     r5 := r5 + 1
-    if (r5 <= '9') goto jumptable_set_digits
+    if (r5 <=s '9') goto jumptable_set_digits using r3
 
 // initializing all the commands in the jumptable 
 .section init
@@ -35,8 +40,10 @@ m[r0][jumptable + '\n'] := newline
 newline:
     r4 := r3        // making a copy of the value stack pointer
     newline_loop:
-        if (r4 == value_stack) goto newline_end     // reached bottom of stack
-        push *r4 on stack r2        // value to be printed
+        // reached bottom of stack
+        if (r4 == value_stack) goto newline_end using r5
+        r4 := m[r0][r4]
+        push r4 on stack r2        // value to be printed
         goto print linking r1
         r4 := r4 + 1                // moving up in value stack
     newline_end:
@@ -51,9 +58,9 @@ add:
 
     r5 := 2                     // number of elements required for add fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -73,9 +80,9 @@ subtract:
 
     r5 := 2                     // number of elements required for subtract fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -95,9 +102,9 @@ multiply:
 
     r5 := 2                     // number of elements required for multiply fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -123,9 +130,9 @@ divide:
 
     r5 := 2                     // number of elements required for divide fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -147,9 +154,9 @@ or:
 
     r5 := 2                     // number of elements required for or fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -169,9 +176,9 @@ and:
 
     r5 := 2                     // number of elements required for and fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -189,7 +196,7 @@ m[r0][jumptable + 'c'] := negate
 negate:
     r5 := 1                     // number of elements required for negate fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r5
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r5 off stack r3         // pop x
@@ -206,7 +213,7 @@ m[r0][jumptable + '~'] := complement
 complement:
     r5 := 1                     // number of elements required for complement fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r5
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r5 off stack r3         // pop x
@@ -224,9 +231,9 @@ swap:
 
     r5 := 2                     // number of elements required for and fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r4
     r5 := r3 + 1
-    if (r5 == value_stack) goto stack_underflow
+    if (r5 == value_stack) goto stack_underflow using r4
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r4 off stack r3         // pop y
@@ -244,7 +251,7 @@ m[r0][jumptable + 'd'] := duplicate
 duplicate:
     r5 := 1                     // number of elements required for complement fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r5
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r5 off stack r3         // pop x
@@ -255,12 +262,12 @@ duplicate:
     goto calculator
 
 .section init
-m[r0][jumptable + 'p'] := pop
+m[r0][jumptable + 'p'] := pop_value
 .section text
-pop:
+pop_value:
     r5 := 1                     // number of elements required for complement fn
     push r5 on stack r2         // passing to stack_underflow
-    if (r3 == value_stack) goto stack_underflow
+    if (r3 == value_stack) goto stack_underflow using r5
     pop r5 off stack r2         // removing from call stack if sufficient args
     
     pop r5 off stack r3         // pop x 
@@ -271,7 +278,7 @@ pop:
 m[r0][jumptable + 'z'] := clear
 .section text
 clear:
-    if (r3 == value_stack) goto calculator
+    if (r3 == value_stack) goto calculator using r5
     pop r5 off stack r3
     goto clear
 
@@ -299,6 +306,12 @@ stack_underflow:
     output " elements\n"
     goto calculator
 
+input_err:
+    pop r5 off stack r2
+    output "Unknown character "
+    output r5
+    output "\n"
+
 .section text
 main:
     .section valstk
@@ -312,12 +325,12 @@ main:
     r4 := 0                 // Initial state is waiting
 
 calculator:
-    input r5
+    r5 := input()
     r5 := ~r5
     if (r5 == 0) goto r1
     r5 := ~r5
     
-    push r5 on stack r2
+    push r5 on stack r2         // push input value on the stack
     r5 := jumptable + r5
     r5 := m[r0][r5]
     goto r5

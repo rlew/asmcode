@@ -1,0 +1,20 @@
+Mark Timmerman
+Rachel Lew
+
+ACKNOWLEDGEMENTS:
+    - Professor Ramsey: explaining the importance and format for function
+      contracts in assembly
+
+CORRECT IMPLEMENTATION:
+
+INCORRECT IMPLEMENTATION:
+
+DEPARTURES FROM CALLING CONVENTION:
+
+PRINT MODULE:
+    We implemented the module as a recursive function
+
+TIME SPENT:
+    - Analyzing: 3 hours
+    - Writing: 4 hours
+    - Debugging:
