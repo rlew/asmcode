@@ -20,11 +20,12 @@ jumptable_set_inputerr:
 // m[r0][x] == digit for all x s.t. '0' <= x <= '9'
 jumptable_setup_digits:
     r5 := jumptable + '0'
+    r4 := jumptable + '9'
 // similar but jumptable+x where r5 <= x <= jumptable +'9'
 jumptable_set_digits:     
     m[r0][r5] := digit
     r5 := r5 + 1
-    if (r5 <=s '9') goto jumptable_set_digits using r3
+    if (r5 <=s r4) goto jumptable_set_digits using r3
 
 // initializing all the commands in the jumptable 
 .section init
@@ -42,10 +43,13 @@ newline:
     newline_loop:
         // reached bottom of stack
         if (r4 == value_stack) goto newline_end using r5
-        r4 := m[r0][r4]
-        push r4 on stack r2        // value to be printed
+        r5 := m[r0][r4]
+        push r5 on stack r2        // value to be printed
+        output ">>> "
         goto print linking r1
+        output "\n"
         r4 := r4 + 1                // moving up in value stack
+        goto newline_loop
     newline_end:
         r4 := 0             // return to waiting state
         goto calculator
@@ -285,16 +289,19 @@ clear:
 .section text
 digit:
     if (r4 == 0) goto digit_waiting
-    pop r1 off stack r3     // getting digit to "enter"
-    r1 := r1 * 10           // adjusting to add new input
-    r5 := m[r0][r2 + 1]
-    r1 := r1 + r5
-    push r1 on stack r2     // value to be added to value stack
+    pop r5 off stack r3     // getting digit to "enter"
+    r5 := r5 * 10           // adjusting to add new input
+    pop r4 off stack r2
+    r4 := r4 - 48
+    r5 := r4 + r5
+    push r5 on stack r3     // value to be added to value stack
+    r4 := 1
+    goto calculator
 
 digit_waiting:
     pop r5 off stack r2     // parameter
+    r5 := r5 - 48
     push r5 on stack r3     // Adding to call stack
-    pop r5 off stack r2     // retrieve return address
     r4 := 1
     goto calculator
 
@@ -308,19 +315,18 @@ stack_underflow:
 
 input_err:
     pop r5 off stack r2
-    output "Unknown character "
+    output "Unknown character '"
     output r5
-    output "\n"
+    output "'\n"
 
 .section text
 main:
     .section valstk
         .space 10000
         value_stack:
-    .section init
-        r3 := value_stack
     
     .section text
+    r3 := value_stack
     // 0 is waiting and 1 is entering
     r4 := 0                 // Initial state is waiting
 

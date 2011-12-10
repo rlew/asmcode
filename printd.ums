@@ -11,6 +11,12 @@ print:
     push r3 on stack r2     // save nonvolatile registers
     push r4 on stack r2 
 
+    if (r5 <s 0) goto print_negative using r3
+    goto print_continue
+    print_negative:
+        output "-"
+        r5 := -r5
+    print_continue:
     r3 := r5        // put parameter into nonvolatile register
     r4 := r3 / 10   // checking for single digit with integer division
     
@@ -38,4 +44,3 @@ print:
     pop r3 off stack r2
     pop r5 off stack r2
     goto r5
-halt
