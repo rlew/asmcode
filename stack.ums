@@ -2,7 +2,7 @@
 
 .zero r0
 .section stk
-.space 100000
+.space 1000000
 endstack:
 .section init
 r2 := endstack

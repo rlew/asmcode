@@ -17,26 +17,44 @@ jumptable_set_inputerr:
     if (r5 == r4) goto jumptable_setup_digits using r3
     goto jumptable_set_inputerr 
 
-// m[r0][x] == digit for all x s.t. '0' <= x <= '9'
+// r5 and r4 set to bounds of digits in jumptable
 jumptable_setup_digits:
     r5 := jumptable + '0'
     r4 := jumptable + '9'
-// similar but jumptable+x where r5 <= x <= jumptable +'9'
+// m[r0][x] == digit for all x s.t. r5 <= x <= r4
 jumptable_set_digits:     
     m[r0][r5] := digit
     r5 := r5 + 1
     if (r5 <=s r4) goto jumptable_set_digits using r3
 
-// initializing all the commands in the jumptable 
+// m[r0][x] == space where x is jumptable + ' ' 
 .section init
 m[r0][jumptable + ' '] := space
+
+// m[r0][x] == space where x is jumptable + '\t' 
+m[r0][jumptable + '\t'] := space
+
+// m[r0][x] == space where x is jumptable + '\v' 
+m[r0][jumptable + 11] := space
+
+// m[r0][x] == space where x is jumptable + '\f'
+m[r0][jumptable + 12] := space
+
+// m[r0][x] == space where x is jumptable + '\r'
+m[r0][jumptable + 13] := space
+
+// Puts the machine back into the waiting state
 .section text
 space:
     r4 := 0         // calculator enters the waiting stage
     goto calculator
     
+// m[r0][x] == newline where x is jumptable + '\n'
 .section init
 m[r0][jumptable + '\n'] := newline
+
+// Prints all values in the value stack and returns the machine
+// to the waiting state
 .section text
 newline:
     push r1 on stack r2
@@ -56,12 +74,16 @@ newline:
         pop r1 off stack r2
         goto calculator
 
+// m[r0][x] == add where x is jumptable + '+'
 .section init
 m[r0][jumptable + '+'] := add
+
+// Removes the two youngest values of the stack and pushes their sum onto the
+// stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 add:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for add fn
     push r5 on stack r2         // passing to stack_underflow
@@ -76,17 +98,20 @@ add:
     r4 := r5 + r4               // calculate x + y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == subtract where x is jumptable + '-'
 .section init
 m[r0][jumptable + '-'] := subtract
+
+// Removes the two youngest values of the stack and pushes their difference 
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 subtract:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for subtract fn
     push r5 on stack r2         // passing to stack_underflow
@@ -101,17 +126,20 @@ subtract:
     r4 := r5 - r4               // calculate x - y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == multiply where x is jumptable + '*'
 .section init
 m[r0][jumptable + '*'] := multiply
+
+// Removes the two youngest values of the stack and pushes their product 
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 multiply:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for multiply fn
     push r5 on stack r2         // passing to stack_underflow
@@ -126,18 +154,22 @@ multiply:
     r4 := r5 * r4               // calculate x * y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == divide where x is jumptable + '/'
 .section init
 m[r0][jumptable + '/'] := divide
+
+// Removes the two youngest values of the stack and pushes their quotient
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
+// Divide by zero error if denominator is 0
 .section text
 division_by_zero:
     push r4 on stack r3             // return 0 to value stack
     output "Division by zero\n"     
-    pop r4 off stack r2             // restore nonvolatile registers
     pop r1 off stack r2
     goto calculator
 
@@ -160,14 +192,12 @@ divide_with_signed:
     r4 := r5 / r4
     r4 := -r4
     push r4 on stack r3
-    pop r4 off stack r2
     pop r1 off stack r2
     r4 := 0         // calculator enters the waiting stage
     goto calculator
 
 divide:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for divide fn
     push r5 on stack r2         // passing to stack_underflow
@@ -186,18 +216,21 @@ divide:
     r4 := r5 / r4               // calculate x / y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     pop r1 off stack r2
     r4 := 0         // calculator enters the waiting stage
     goto calculator
 
 
+// m[r0][x] == or where x is jumptable + '|'
 .section init
 m[r0][jumptable + '|'] := or
+
+// Removes the two youngest values of the stack and pushes their bitwise or
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 or:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for or fn
     push r5 on stack r2         // passing to stack_underflow
@@ -212,17 +245,20 @@ or:
     r4 := r5 | r4               // calculate x | y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator  
 
+// m[r0][x] == or and x is jumptable + '&'
 .section init
 m[r0][jumptable + '&'] := and
+
+// Removes the two youngest values of the stack and pushes their bitwise and
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 and:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for and fn
     push r5 on stack r2         // passing to stack_underflow
@@ -237,13 +273,17 @@ and:
     r4 := r5 & r4               // calculate x & y
     push r4 on stack r3         // push new value
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == negate and x is jumptable + 'c'
 .section init
 m[r0][jumptable + 'c'] := negate
+
+// Removes the youngest value from the stack and pushes its negation
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 negate:
     push r1 on stack r2
@@ -262,9 +302,13 @@ negate:
     pop r1 off stack r2
     goto calculator
 
-
+// m[r0][x] == complement and x is jumptable + '~'
 .section init
 m[r0][jumptable + '~'] := complement
+
+// Removes the youngest value from the stack and pushes its complement
+// onto the stack. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 complement:
     push r1 on stack r2
@@ -283,12 +327,16 @@ complement:
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == swap and x is jumptable + 's'
 .section init
 m[r0][jumptable + 's'] := swap
+
+// Removes the two youngest values of the stack and pushes them onto the stack
+// in the opposite order. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 swap:
     push r1 on stack r2
-    push r4 on stack r2         
 
     r5 := 2                     // number of elements required for and fn
     push r5 on stack r2         // passing to stack_underflow
@@ -303,13 +351,17 @@ swap:
     push r4 on stack r3         // reversing order of x and y on value stack
     push r5 on stack r3
 
-    pop r4 off stack r2         // restore nonvolatile values
     r4 := 0         // calculator enters the waiting stage
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == duplicate and x is jumptable + 'd'
 .section init
 m[r0][jumptable + 'd'] := duplicate
+
+// Removes the youngest value of the stack and pushes it onto the stack
+// twice. Returns the machine to waiting state.
+// Stack underflow error if insufficient number of arguments on stack.
 .section text
 duplicate:
     push r1 on stack r2
@@ -328,8 +380,12 @@ duplicate:
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == pop_value and x is jumptable + 'p'
 .section init
 m[r0][jumptable + 'p'] := pop_value
+
+// Removes the youngest values of the stack. Returns the machine to waiting 
+// state. Stack underflow error if insufficient number of arguments on stack.
 .section text
 pop_value:
     push r1 on stack r2
@@ -345,8 +401,11 @@ pop_value:
     pop r1 off stack r2
     goto calculator
 
+// m[r0][x] == clear and x is jumptable + 'z'
 .section init
 m[r0][jumptable + 'z'] := clear
+
+// Removes all values of the stack. Returns the machine to waiting state.
 .section text
 clear:
     if (r3 == value_stack) goto calculator using r5
@@ -355,6 +414,9 @@ clear:
     
     goto clear
 
+// Waiting State: Pushes the value onto the value stack.
+// Entering State: Pops off the youngest value and appends the current input 
+// onto it before pushing it onto the stack.
 .section text
 digit:
     if (r4 == 0) goto digit_waiting
@@ -374,27 +436,40 @@ digit_waiting:
     r4 := 1
     goto calculator
 
+// Indicates the necessary number of arguments needed to execute the calling
+// function. Returns the machine to the waiting state.
 .section text
 stack_underflow:
     pop r5 off stack r2     // retrieving number of arguments
     output "Stack underflow---expected at least "
     output r5 + 48
+    if (r5 == 2) goto elements using r4
+    element:
+    output " element\n"
+    goto end_stack_underflow
+    elements:
     output " elements\n"
-    pop r4 off stack r2
+
+    end_stack_underflow:
     pop r1 off stack r2
     r4 := 0
     goto calculator
 
+// Indicates that there is no calculator command for the character. Returns
+// the machine to the waiting state.
 input_err:
     pop r5 off stack r2
     output "Unknown character '"
     output r5
     output "'\n"
+    r4 := 0
 
+// m[r0][x] == 0 for all x s.t. value_stack - 10000 <= x < value_stack.
+// Places the machine in the waiting state.
 .section text
 main:
     .section valstk
-        .space 10000
+        .space 1000000
         value_stack:
     
     .section text
@@ -402,6 +477,8 @@ main:
     // 0 is waiting and 1 is entering
     r4 := 0                 // Initial state is waiting
 
+// goto m[r0][x] where x = jumptable + input
+// Returns to calling function if end of input is reached
 calculator:
     r5 := input()
     r5 := ~r5
