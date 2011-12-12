@@ -6,8 +6,10 @@ ACKNOWLEDGEMENTS:
       contracts in assembly
 
 CORRECT IMPLEMENTATION:
+    Everything.
 
 INCORRECT IMPLEMENTATION:
+    Nothing.
 
 DEPARTURES FROM CALLING CONVENTION:
     - Rather than making r4 persist across function calls, we have assigned it

@@ -1,9 +1,13 @@
-// Printing a positive number using a recursive function
+// Calling conventions:
+//      r1, r2, r3: must persist across function calls (non-volatile)
+//      r4: volatile within procedures as long as it is set to appropriate
+//      state upon exiting the procedure
+
  .zero r0
  .temp r6, r7
  .section text
 
-// 
+// Printing a positive number using a recursive function
 print:
     pop r5 off stack r2     // load parameter
     // Preserving calling function's nonvolatile registers on stack

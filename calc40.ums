@@ -1,3 +1,16 @@
+// All registers are represented as follows:
+//      r0: 0
+//      r1: return address (on call) / return value (on return)
+//      r2: call stack pointer
+//      r3: value stack pointer
+//      r4: machine state (0 for waiting and 1 for entering)
+//      r5: volatile register
+//      r6, r7: temporary registers
+// Calling conventions:
+//      r1, r2, r3: must persist across function calls (non-volatile)
+//      r4: volatile within procedures as long as it is set to appropriate
+//      state upon exiting the procedure
+
 .section data
 .zero r0
 .temps r6, r7
@@ -408,7 +421,7 @@ m[r0][jumptable + 'z'] := clear
 // Removes all values of the stack. Returns the machine to waiting state.
 .section text
 clear:
-    if (r3 == value_stack) goto calculator using r5
+    if (r3 == value_stack) goto calculator using r5    // empty value stack
     pop r5 off stack r3
     r4 := 0         // calculator enters the waiting stage
     
@@ -482,7 +495,7 @@ main:
 calculator:
     r5 := input()
     r5 := ~r5
-    if (r5 == 0) goto r1
+    if (r5 == 0) goto r1        // examining input for EOI character
     r5 := ~r5
     
     push r5 on stack r2         // push input value on the stack
